@@ -1,0 +1,7 @@
+{
+  "name": "Personal Finance Tracker",
+  "description": "Simple personal finance backend tracking.",
+  "repository": "https://github.com/aretecode/personal-finance-tracker",
+  "keywords": ["node", "express", "static"],
+  "image": "heroku/nodejs"
+}

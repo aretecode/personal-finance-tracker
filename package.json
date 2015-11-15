@@ -1,0 +1,45 @@
+{
+  "name": "personal-finance-tracker",
+  "version": "0.1.6",
+  "description": "Simple personal finance backend tracking.",
+  "main": "index.coffee",
+  "scripts": {
+    "prepublish_disabled": "mocha -w --compilers coffee:coffee-script/register",
+    "postinstall_disabled": "mocha -w --compilers coffee:coffee-script/register",
+    "test": "mocha -w --compilers coffee:coffee-script/register"
+  },
+  "dependencies": {
+    "chai": "^3.4.1",
+    "coffee-script": "^1.10.0",
+    "ejs": "2.3.3",
+    "express": "4.13.3",
+    "grunt": "latest",
+    "grunt-cli": "latest",
+    "grunt-exec": "latest",
+    "knex": "^0.8.6",
+    "mocha": "^2.3.3",
+    "moment": "^2.10.6",
+    "morgan": "^1.6.1",
+    "passport": "^0.3.2",
+    "passport-http-bearer": "^1.0.1",
+    "pg": "^4.4.3",
+    "requirejs": "latest",
+    "sqlite3": "^3.1.1",
+    "underscore": "^1.8.3",
+    "uuid": "^2.0.1"
+  },
+  "engines": {
+    "node": "4.1.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aretecode/personal-finance-tracker"
+  },
+  "keywords": [
+    "node",
+    "heroku",
+    "express",
+    "finance"
+  ],
+  "license": "MIT"
+}
