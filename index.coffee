@@ -51,12 +51,11 @@ expenseService = new ExpenseService()
 @REPORTS 
 @TODO: be able to just specify an end date
 ###
-app.get '/api/reports/balance/trend/:startmonth?-:startyear?,:endmonth?-endyear?', (req, res) ->
-  if not req.params.endmonth? 
-    monthYearRange = new MonthYearRange(req.params.startmonth, req.params.startyear, req.params.endmonth, req.params.endyear)
-  else 
-    monthYearRange = new MonthYearRange()
+app.get '/api/reports/balance/trend', (req, res) ->
+  balanceTrend incomeService, expenseService, ((result) -> res.send result)
 
+app.get '/api/reports/balance/trend/:startmonth?-:startyear?,:endmonth?-:endyear?', (req, res) ->
+  monthYearRange = new MonthYearRange(req.params.startmonth, req.params.startyear, req.params.endmonth, req.params.endyear)
   balanceTrend incomeService, expenseService, ((result) -> res.send result), monthYearRange
 
 app.get '/api/reports/incomes/monthly/:month?/:year?', (req, res) ->

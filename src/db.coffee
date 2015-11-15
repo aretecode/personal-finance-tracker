@@ -67,10 +67,18 @@ class FinanceRepository
       pg.select('tag').from('tags').where('id', '=', id).then (tags) -> 
         tags = _.map tags, (tag) -> tag = tag.tag
         try 
-          found = AbstractFinanceOperationFactory.hydrateAllFrom table, rows, tags
+          found = Factory.hydrateAllFrom table, rows, tags
           cb found
         catch e
           cb {error: 404; message: table + ' not found with id: `' + id + '` '}
+
+  findCreatedAtSortedBy: (sorted, cb) ->
+    @pg.select('created_at').from(@table).limit(1).orderBy('created_at', sorted)
+    .then (row) -> 
+      cb row[0].created_at
+
+  findEarliestDate: (cb) -> @findCreatedAtSortedBy('asc', cb)
+  findLatestDate: (cb) -> @findCreatedAtSortedBy('desc', cb)
 
   findBetweenMonths: (monthYearRange = new MonthYearRange(), cb) ->
     query = @pg(@table).select()
@@ -80,14 +88,23 @@ class FinanceRepository
     .andWhereRaw("EXTRACT(MONTH FROM created_at) <= " + monthYearRange.endMonth)
     .toString()
 
-    table = @table
-    @pg.raw(query)
-    .then (found) ->
-      try 
-        found = AbstractFinanceOperationFactory.hydrateAllFrom table, rows, tags
-        cb found
-      catch e
-        cb {error: 404; message: table + ' not found between range: `' + monthYearRange.toString() + '` '}
+    {pg, table} = {@pg, @table}
+    @pg.raw(query).then (all) -> return all.rows
+    .map (item) ->
+      pg.select('tag').from('tags').where('id', '=', item.id).then (tagRow) ->
+        # because not all tags are in all tables
+        return null if tagRow.length is 0 
+
+        ### @TODO: move this into the hydrator ###
+        tags = ''
+        for i in [0 .. tagRow.length-1]
+          tags += tagRow[i].tag + ',' 
+        tags = tags.substring(0, tags.length - 1) # trim the trailing comma
+
+        return Factory.hydrateFrom table, item, tags
+    .then (all) ->
+      all = _.flatten(all)
+      cb all 
 
   ###
   @TODO: optimize query, combine extract?
@@ -110,14 +127,10 @@ class FinanceRepository
       else 
         cb true
 
-  ### 
-  @TODO: should use the id of tag 
-  ###
   findWithTag: (tag, cb) ->
     {pg, table} = {@pg, @table}
     @pg.select('id', 'tag').from('tags').where('tag', '=', tag).then (tagResult) ->
       tagResult = tagResult[0] if Array.isArray tagResult
-      console.log tagResult
       pg(table).select().where('id', '=', tagResult.id).then (rows) ->
         try result = Factory.hydrateAllFrom(table, rows, tagResult.tag); cb result 
         catch e 
@@ -149,8 +162,7 @@ class FinanceRepository
 
         tags = ''
         for i in [0 .. tag.length-1]
-          tags += tag[i].tag 
-          tags += ',' 
+          tags += tag[i].tag + ',' 
         tags = tags.substring(0, tags.length - 1) # trim the trailing comma
 
         fo = Factory.hydrateFrom(table, item, tags)
@@ -166,6 +178,7 @@ class FinanceRepository
       send the result of all concats to the @param callback 
 
   @TODO: for each one of these financialObjects fetched, get their respective OTHER tags
+  @TODO: fix reporting with catching
   ###
   listWithTag: (tag, cb) ->    
     {pg, table} = {@pg, @table}
@@ -206,7 +219,6 @@ class FinanceRepository
     .map (item) ->
       pg.select().from('tags').where('id', '=', item.id).then (tag) -> return tag 
       .then (tag) ->
-        console.log tag 
         tags = ''
         for i in [0 .. tag.length-1]
           tags += tag[i].tag 
@@ -257,7 +269,7 @@ class FinanceService
   reports: (month, year, callback) ->
     year = new Date().getFullYear() if not year?
     month = new Date().getMonth()+1 if not month?
-    console.log month, year
+    # console.log month, year
     return @repo.findWithMonthYear(month, year, callback)
 
   updateWithId: (financeOption, callback) -> @repo.updateWithId(financeOption, callback)
@@ -266,6 +278,8 @@ class FinanceService
   listWithTag: (tag, callback) -> @repo.listWithTag(tag, callback) 
   list: (callback) -> @repo.list(callback)
   existsWithId: (id, callback) -> @repo.existsWithId(id, callback)
+  findEarliestDate: (callback) -> @repo.findEarliestDate(callback)
+  findLatestDate: (callback) -> @repo.findLatestDate(callback)
 
 class IncomeService extends FinanceService
   constructor: (@repo = new IncomeRepository()) ->

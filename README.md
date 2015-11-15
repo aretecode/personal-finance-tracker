@@ -1,5 +1,6 @@
 # fixing:
-* [ ] finalize tests
+* [ ] finalize tests 
+* [ ] TEST TREND
 * [ ] move all inline todos 
 * [ ] fix update to do full update, tags to created_at
 * [ ] fix http verbs, not just get
