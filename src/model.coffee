@@ -82,6 +82,7 @@ class Tag
 
     tagArray
 
+
 class Money 
   ### 
   @TODO: Can assert the types
@@ -120,6 +121,13 @@ class FinanceOperation
     return false if not finance.created_at is @created_at
     return false if not finance.description is @description
     return true
+
+  hasTag: (tagName) ->
+    if Array.isArray @tags
+      for i in [0 .. @tags.length-1]
+        return true if tagName is @tags[i].name
+      return false
+    return if (@tags.name is tagName) then true else false 
 
 ### @desc tracks spendings ###
 class Expense extends FinanceOperation

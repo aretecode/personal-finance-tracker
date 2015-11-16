@@ -113,13 +113,45 @@ class FinanceRepository
   ###
   findWithMonthYear: (month, year, cb) ->
     query = @pg(@table).select().whereRaw("EXTRACT(MONTH FROM created_at) = " + month).andWhereRaw("EXTRACT(YEAR FROM created_at) = " + year).toString()
-    @pg.raw(query)
-    .then (found) ->        
-      if found.rows.length is 0
-        cb {error: 404; message: 'finding using the month and near not found for month: `' + month + '` and year: `' + year + '`'}
-      else 
-        cb found.rows
-  
+
+    {pg, table} = {@pg, @table}
+    @pg.raw(query).then (all) -> return all.rows
+    .map (item) ->
+      pg.select('tag').from('tags').where('id', '=', item.id).then (tagRow) ->
+        # because not all tags are in all tables
+        return null if tagRow.length is 0 
+
+        ### @TODO: move this into the hydrator ###
+        tags = ''
+        for i in [0 .. tagRow.length-1]
+          tags += tagRow[i].tag + ',' 
+        tags = tags.substring(0, tags.length - 1) # trim the trailing comma
+
+        return Factory.hydrateFrom table, item, tags
+    .then (all) ->
+      all = _.flatten(all)
+
+      ### @TODO: optimize, don't need to loop 2x ###
+      tags = {}
+
+      # getting all the tags from all the items
+      for i in [0 .. all.length-1]
+        tag = all[i].tags
+        if Array.isArray tag
+          for ii in [0 .. tag.length-1]
+            tags[tag[ii].name] = 0
+        else 
+          tags[tag.name] = 0
+      
+      # go through all tags 
+      # and get items that correspond
+      for tag, value of tags
+        for i in [0 .. all.length-1]
+          # add the income or expense to the tag 
+          tags[tag] += all[i].money.amount if all[i].hasTag(tag)
+      # send the tags to the callback
+      cb tags 
+
   existsWithId: (id, cb) ->
     @pg.select('id').from(@table).where('id', '=', id).then (rows) ->  
       if rows.length is 0
