@@ -1,4 +1,4 @@
-require 'coffee-script/register'
+require('./env.coffee')
 
 conn = {
   host: process.env.DATABASE_HOST

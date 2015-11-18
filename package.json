@@ -1,12 +1,11 @@
 {
   "name": "personal-finance-tracker",
-  "version": "0.1.6",
+  "version": "0.2.3",
   "description": "Simple personal finance backend tracking.",
   "main": "index.coffee",
   "scripts": {
-    "prepublish_disabled": "mocha -w --compilers coffee:coffee-script/register",
     "postinstall_disabled": "mocha -w --compilers coffee:coffee-script/register",
-    "test": "mocha -w --compilers coffee:coffee-script/register"
+    "test": "mocha --compilers coffee:coffee-script/register"
   },
   "dependencies": {
     "chai": "^3.4.1",
@@ -29,7 +28,7 @@
     "uuid": "^2.0.1"
   },
   "engines": {
-    "node": "4.1.1"
+    "node": "4.2.2"
   },
   "repository": {
     "type": "git",

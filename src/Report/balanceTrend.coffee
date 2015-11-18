@@ -1,4 +1,6 @@
-require 'coffee-script/register'
+{Payload} = require('./../Payload.coffee')
+{MonthYearRange} = require('./MonthYearRange.coffee')
+{Report} = require('./Report.coffee')
 
 ### 
 could also just remove this and improve the query for selecting in the list...
@@ -21,8 +23,11 @@ findEarliestAndLatestOfAll = (incomeService, expenseService, cb) ->
           earliestLatest.latest = new Date(earliestLatest.latest)
           cb earliestLatest
 
-### @TODO: remove need for this, optimize query ###
-earliestLatestIntoMonthYearRange = (earliestLatest) ->
+### 
+@TODO: remove need for this, optimize query 
+aka, earliestLatestIntoMonthYearRange
+###
+earliestLatestRange = (earliestLatest) ->
   earliestMonth = earliestLatest.earliest.getMonth()+1
   earliestYear  = earliestLatest.earliest.getFullYear()
   latestMonth   = earliestLatest.latest.getMonth()+1
@@ -34,31 +39,19 @@ balanceTrend = (incomeService, expenseService, cb, monthYearRange) ->
   # so we get earliest and latest in db
   if not monthYearRange?
     findEarliestAndLatestOfAll incomeService, expenseService, (earliestLatest) ->
-      monthYearRange = earliestLatestIntoMonthYearRange earliestLatest
+      monthYearRange = earliestLatestRange earliestLatest
       balanceRestOfTrend incomeService, expenseService, cb, monthYearRange
   else 
     balanceRestOfTrend incomeService, expenseService, cb, monthYearRange
-
 balanceRestOfTrend = (incomeService, expenseService, cb, monthYearRange) ->
   rep = new Reporter()
   incomeService.findBetweenMonths monthYearRange, (incomes) ->
-    # console.log incomes 
     expenseService.findBetweenMonths monthYearRange, (expenses) ->
-      # console.log incomes, expenses
-      rep.report(monthYearRange, incomes, expenses)
-      cb rep.reports
+      rep.report monthYearRange, incomes, expenses
 
-# could also have Balance object and apply events to it
-class Report 
-  constructor: (@month, @year, @income, @expense, @balance) ->
+      code = if (rep.reports.length) is 0 then 500 else 200
+      cb new Payload(code, rep.reports)
 
-### 
-@TODO: use moment-range.js npm
-@TODO: use a chaining singleton for construction, @example MonthYearRange.startMonth(return @).startYear()...
-###
-class MonthYearRange 
-  constructor: (@startMonth = 1, @startYear = 1900, @endMonth = 12, @endYear = 2015) ->
-  toString: -> JSON.stringify({startMonth: @startMonth; startYear: @startYear; endMonth: @endMonth; endYear: @endYear})
 
 ### @TODO: refactor and model the concepts ###
 class Reporter
